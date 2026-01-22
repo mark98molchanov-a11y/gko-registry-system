@@ -750,10 +750,25 @@ async function loadFromGitHub() {
     
     try {
         console.log('Загрузка данных из GitHub...');
-        const response = await fetch(GITHUB_SYNC_API);
+        showNotification('Загрузка данных из GitHub...', 'info');
+        
+        // Вариант 1: Пытаемся загрузить файл с сегодняшней датой
+        const today = new Date().toISOString().split('T')[0];
+        const todayFile = `gko_all_data_${today}.json`;
+        
+        let response = await fetch(`${GITHUB_SYNC_API}?path=${encodeURIComponent(todayFile)}`);
+        let loadedFileName = todayFile;
+        
+        // Если сегодняшнего нет, пробуем стандартное имя
+        if (!response.ok) {
+            console.log('Сегодняшнего файла нет, пробую стандартный...');
+            const defaultFile = 'gko_all_data.json';
+            response = await fetch(`${GITHUB_SYNC_API}?path=${encodeURIComponent(defaultFile)}`);
+            loadedFileName = defaultFile;
+        }
         
         if (!response.ok) {
-            throw new Error(`Ошибка загрузки: ${response.status}`);
+            throw new Error(`Файл не найден на GitHub (${response.status})`);
         }
         
         const json = await response.json();
@@ -776,30 +791,41 @@ async function loadFromGitHub() {
             renderDashboardsGrid();
         }
         
-        // Показываем уведомление
-        showNotification('Данные загружены из GitHub', 'success');
+        showNotification(`✅ Данные загружены из GitHub\nФайл: ${loadedFileName}`, 'success');
+        updateFileNameIndicator(loadedFileName);
         
     } catch (error) {
         console.warn('Не удалось загрузить из GitHub:', error.message);
-        // Используем локальные данные
         showNotification('Используются локальные данные', 'warning');
+        
+        // Загружаем локальные данные
+        loadData();
+        loadDashboardsData();
     }
 }
 
 // Сохранение в GitHub
+
 async function saveToGitHub() {
     if (!GITHUB_SYNC_ENABLED) {
         alert('Синхронизация с GitHub отключена');
         return;
     }
     
-    if (!confirm(`Сохранить текущие данные в GitHub?\n\nНПА: ${appData.length} записей\nДашборды: ${dashboardsData.length}`)) {
+    // Автоматическое именование файла по дате и времени
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    const fileName = `gko_all_data_${dateStr}_${timeStr}.json`;
+    
+    if (!confirm(`Сохранить текущие данные в GitHub?\n\nНПА: ${appData.length} записей\nДашборды: ${dashboardsData.length}\n\nФайл: ${fileName}`)) {
         return;
     }
     
     const allData = {
         version: "1.0",
         exportDate: new Date().toISOString(),
+        fileName: fileName,
         npas: appData,
         dashboards: dashboardsData,
         metadata: {
@@ -811,9 +837,9 @@ async function saveToGitHub() {
     };
     
     try {
-        showNotification('Сохранение в GitHub...', 'info');
+        showNotification(`Сохранение в GitHub как "${fileName}"...`, 'info');
         
-        const response = await fetch(GITHUB_SYNC_API, {
+        const response = await fetch(`${GITHUB_SYNC_API}?path=${encodeURIComponent(fileName)}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -824,7 +850,7 @@ async function saveToGitHub() {
         const result = await response.json();
         
         if (response.ok) {
-            showNotification('✅ Данные успешно сохранены в GitHub!', 'success');
+            showNotification(`✅ Данные сохранены в GitHub!\nФайл: ${fileName}`, 'success');
             console.log('GitHub сохранение успешно:', result);
         } else {
             throw new Error(result.error || 'Ошибка сохранения');
