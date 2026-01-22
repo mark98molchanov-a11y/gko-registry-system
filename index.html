@@ -180,20 +180,28 @@
                     <!-- Кнопки управления данными -->
                     <div class="flex gap-2">
                         <!-- Combined JSON Import -->
-                        <button onclick="importJson()" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
-                            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                            </svg>
-                            <span>Импорт JSON</span>
-                        </button>
-                        
-                        <!-- Combined JSON Export -->
-                        <button onclick="exportJson()" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
-                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <span>Экспорт JSON</span>
-                        </button>
+<button onclick="importJson()" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+    <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+    </svg>
+    <span>Импорт JSON</span>
+</button>
+
+<!-- Combined JSON Export -->
+<button onclick="exportJson()" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    <span>Экспорт JSON</span>
+</button>
+
+<!-- Save to GitHub -->
+<button onclick="saveToGitHub()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow flex items-center gap-2">
+    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/>
+    </svg>
+    <span>Сохранить в GitHub</span>
+</button>
                         
                         <!-- Reset Button -->
                         <button onclick="hardResetCurrent()" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
@@ -733,7 +741,133 @@
         const STORAGE_KEY_DASHBOARDS = 'gko_dashboards_v2';
         const STORAGE_KEY_ALL = 'gko_all_data';
         const now = Date.now();
+        const GITHUB_SYNC_ENABLED = true;
+const GITHUB_SYNC_API = '/api/github-sync'; // Или полный URL если на другом домене
+
+// Автоматическая загрузка из GitHub при открытии
+async function loadFromGitHub() {
+    if (!GITHUB_SYNC_ENABLED) return;
+    
+    try {
+        console.log('Загрузка данных из GitHub...');
+        const response = await fetch(GITHUB_SYNC_API);
         
+        if (!response.ok) {
+            throw new Error(`Ошибка загрузки: ${response.status}`);
+        }
+        
+        const json = await response.json();
+        
+        if (json.npas && Array.isArray(json.npas)) {
+            appData = [...json.npas];
+            localStorage.setItem(STORAGE_KEY_NPA, JSON.stringify(appData));
+            console.log(`Загружено ${json.npas.length} записей НПА из GitHub`);
+        }
+        
+        if (json.dashboards && Array.isArray(json.dashboards)) {
+            dashboardsData = [...json.dashboards];
+            localStorage.setItem(STORAGE_KEY_DASHBOARDS, JSON.stringify(dashboardsData));
+            console.log(`Загружено ${json.dashboards.length} дашбордов из GitHub`);
+        }
+        
+        // Обновляем интерфейс
+        renderGrid();
+        if (currentTab === 'dashboards') {
+            renderDashboardsGrid();
+        }
+        
+        // Показываем уведомление
+        showNotification('Данные загружены из GitHub', 'success');
+        
+    } catch (error) {
+        console.warn('Не удалось загрузить из GitHub:', error.message);
+        // Используем локальные данные
+        showNotification('Используются локальные данные', 'warning');
+    }
+}
+
+// Сохранение в GitHub
+async function saveToGitHub() {
+    if (!GITHUB_SYNC_ENABLED) {
+        alert('Синхронизация с GitHub отключена');
+        return;
+    }
+    
+    if (!confirm(`Сохранить текущие данные в GitHub?\n\nНПА: ${appData.length} записей\nДашборды: ${dashboardsData.length}`)) {
+        return;
+    }
+    
+    const allData = {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        npas: appData,
+        dashboards: dashboardsData,
+        metadata: {
+            npaCount: appData.length,
+            dashboardsCount: dashboardsData.length,
+            exportFormat: "combined",
+            lastSync: new Date().toISOString()
+        }
+    };
+    
+    try {
+        showNotification('Сохранение в GitHub...', 'info');
+        
+        const response = await fetch(GITHUB_SYNC_API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(allData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification('✅ Данные успешно сохранены в GitHub!', 'success');
+            console.log('GitHub сохранение успешно:', result);
+        } else {
+            throw new Error(result.error || 'Ошибка сохранения');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка сохранения в GitHub:', error);
+        showNotification(`❌ Ошибка: ${error.message}`, 'error');
+    }
+}
+
+// Вспомогательная функция для уведомлений
+function showNotification(message, type = 'info') {
+    // Создаем временное уведомление
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ${
+        type === 'success' ? 'bg-emerald-500 text-white' :
+        type === 'error' ? 'bg-red-500 text-white' :
+        type === 'warning' ? 'bg-amber-500 text-white' :
+        'bg-brand-600 text-white'
+    }`;
+    notification.innerHTML = `
+        <div class="flex items-center gap-2">
+            <span class="font-medium">${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-white/80">&times;</button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Автоматическое скрытие через 5 секунд
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }
+    }, 5000);
+}
         // Данные для НПА
         const initialData = [
            { id: 2, doc: "Приказ № П/0336", norm: "Пункт 15", before: "Без обязательного расчета УПКС.", after: "Обязательный расчет УПКС для всех уровней.", type: "Аналитика", human: "ГБУ обязано считать среднюю цену метра для каждого квартала и района.", example: "Расчет средней цены кв.м. для конкретного СНТ.", target: "ГБУ", fullOld: "Пункт заканчивался мероприятием: «анализ результатов определения кадастровой стоимости».", fullNew: "«определение удельных показателей кадастровой стоимости объектов недвижимости для кадастрового квартала, населенного пункта, муниципального района...» 3.", changeDoc: "П/0327/25", date: "15.09.2025", updated: now },
@@ -2444,9 +2578,17 @@ ${importedDashboards.slice(0, 3).map(d =>
 }
 
         // ============== ИНИЦИАЛИЗАЦИЯ ==============
-        window.addEventListener('DOMContentLoaded', function() {
-            loadData();
-        });
+window.addEventListener('DOMContentLoaded', function() {
+    // Сначала пытаемся загрузить из GitHub
+    loadFromGitHub().then(() => {
+        console.log('GitHub загрузка завершена');
+    }).catch(() => {
+        // Если GitHub недоступен, загружаем локальные данные
+        console.log('Используем локальные данные');
+        loadData();
+        loadDashboardsData();
+    });
+});
     </script>
 </body>
 </html>
