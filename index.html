@@ -816,9 +816,8 @@ async function saveToGitHub() {
         return;
     }
     
-    // ЗАМЕНИТЕ ЭТОТ ТОКЕН НА СВОЙ!
-    // Получите на https://github.com/settings/tokens
-    const GITHUB_TOKEN = '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'; // ВАЖНО: замените на ваш токен!
+    // ВАЖНО: Замените на ваш действительный токен!
+    const GITHUB_TOKEN = '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'; // Замените!
     
     // Настройки репозитория
     const GITHUB_REPO_OWNER = 'mark98molchanov-a11y';
@@ -850,65 +849,106 @@ async function saveToGitHub() {
     try {
         showNotification(`📤 Отправка данных на GitHub...`, 'info');
         
-        // Шаг 1: Получаем информацию о текущем файле
+        // Шаг 1: Проверяем доступность API
+        console.log('Проверяем доступность GitHub API...');
+        
+        // Шаг 2: Получаем информацию о текущем файле
         let sha = null;
         try {
             const getResponse = await fetch(
                 `${GITHUB_API_BASE}/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`,
                 {
+                    method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
                     }
                 }
             );
             
+            console.log('GET статус:', getResponse.status);
+            
             if (getResponse.status === 200) {
                 const fileInfo = await getResponse.json();
-                sha = fileInfo.sha; // SHA для обновления существующего файла
+                sha = fileInfo.sha;
+                console.log('SHA найден:', sha ? 'да' : 'нет');
+            } else if (getResponse.status === 404) {
+                console.log('Файл не существует, будет создан новый');
+            } else {
+                const errorText = await getResponse.text();
+                console.error('Ошибка GET:', getResponse.status, errorText);
             }
-        } catch (error) {
-            console.log('Файл будет создан новый');
+        } catch (getError) {
+            console.error('Ошибка при получении информации о файле:', getError);
         }
         
-        // Шаг 2: Кодируем содержимое в base64
+        // Шаг 3: Кодируем содержимое в base64
         const encodedContent = btoa(unescape(encodeURIComponent(content)));
         
-        // Шаг 3: Отправляем запрос на создание/обновление файла
+        // Шаг 4: Отправляем запрос на создание/обновление файла
+        const payload = {
+            message: `Обновление данных GKO: ${new Date().toLocaleString('ru-RU')}`,
+            content: encodedContent,
+            branch: GITHUB_BRANCH
+        };
+        
+        if (sha) {
+            payload.sha = sha;
+        }
+        
+        console.log('Отправляем PUT запрос...', payload.message);
+        
         const putResponse = await fetch(
             `${GITHUB_API_BASE}/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`,
             {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Authorization': `token ${GITHUB_TOKEN}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/vnd.github.v3+json'
                 },
-                body: JSON.stringify({
-                    message: `Обновление данных GKO: ${new Date().toLocaleString('ru-RU')}`,
-                    content: encodedContent,
-                    sha: sha,
-                    branch: GITHUB_BRANCH
-                })
+                body: JSON.stringify(payload)
             }
         );
         
+        console.log('PUT статус:', putResponse.status);
+        console.log('PUT статус текст:', putResponse.statusText);
+        
         if (putResponse.ok) {
             const result = await putResponse.json();
+            console.log('Успешно сохранено в GitHub:', result);
+            
             showNotification(
-                `✅ Данные успешно сохранены в GitHub!\nФайл: ${GITHUB_FILE_PATH}`,
+                `✅ Данные успешно сохранены в GitHub!\nФайл: ${GITHUB_FILE_PATH}\nКоммит: ${result.commit.sha.substring(0, 7)}`,
                 'success'
             );
-            console.log('GitHub сохранение успешно');
+            
+            // Обновляем индикатор файла
+            updateFileNameIndicator(GITHUB_FILE_PATH);
+            
         } else {
             const errorData = await putResponse.json();
-            throw new Error(errorData.message || 'Ошибка сохранения');
+            console.error('Ошибка сохранения:', errorData);
+            
+            let errorMessage = errorData.message || 'Неизвестная ошибка';
+            
+            // Детализация ошибок
+            if (errorMessage.includes('Bad credentials')) {
+                errorMessage = 'Неверный токен GitHub. Создайте новый токен с правами repo.';
+            } else if (errorMessage.includes('Repository not found')) {
+                errorMessage = 'Репозиторий не найден. Проверьте название репозитория.';
+            } else if (errorMessage.includes('permission')) {
+                errorMessage = 'Недостаточно прав. Проверьте права токена.';
+            }
+            
+            showNotification(`❌ Ошибка сохранения: ${errorMessage}`, 'error');
         }
         
     } catch (error) {
-        console.error('Ошибка сохранения в GitHub:', error);
+        console.error('Критическая ошибка сохранения:', error);
         showNotification(
-            `❌ Ошибка сохранения: ${error.message}`,
+            `❌ Критическая ошибка: ${error.message}`,
             'error'
         );
     }
