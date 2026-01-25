@@ -750,12 +750,13 @@
     const GITHUB_SYNC_API = window.GITHUB_RAW_URL;
 
     // Автоматическая загрузка из GitHub при открытии
-    async function loadFromGitHub() {
-        if (!GITHUB_SYNC_ENABLED) return;
+async function loadFromGitHub() {
+    if (!GITHUB_SYNC_ENABLED) return;
+    
+    try {
+        console.log('Загрузка данных из GitHub...');
+        showNotification('Загрузка данных из GitHub...', 'info');
         
-        try {
-            console.log('Загрузка данных из GitHub...');
-            showNotification('Загрузка данных из GitHub...', 'info');
             
             // Вариант 1: Пытаемся загрузить файл с сегодняшней датой
             const today = new Date().toISOString().split('T')[0];
@@ -778,36 +779,35 @@
             
             const json = await response.json();
             
-            if (json.npas && Array.isArray(json.npas)) {
-                appData = [...json.npas];
-                localStorage.setItem(STORAGE_KEY_NPA, JSON.stringify(appData));
-                console.log(`Загружено ${json.npas.length} записей НПА из GitHub`);
-            }
-            
-            if (json.dashboards && Array.isArray(json.dashboards)) {
-                dashboardsData = [...json.dashboards];
-                localStorage.setItem(STORAGE_KEY_DASHBOARDS, JSON.stringify(dashboardsData));
-                console.log(`Загружено ${json.dashboards.length} дашбордов из GitHub`);
-            }
-            
-            // Обновляем интерфейс
-            renderGrid();
-            if (currentTab === 'dashboards') {
-                renderDashboardsGrid();
-            }
-            
-            showNotification(`✅ Данные загружены из GitHub\nФайл: ${loadedFileName}`, 'success');
-            updateFileNameIndicator(loadedFileName);
-            
-        } catch (error) {
-            console.warn('Не удалось загрузить из GitHub:', error.message);
-            showNotification('Используются локальные данные', 'warning');
-            
-            // Загружаем локальные данные
-            loadData();
-            loadDashboardsData();
+        if (json.npas && Array.isArray(json.npas)) {
+            appData = [...json.npas];
+            localStorage.setItem(STORAGE_KEY_NPA, JSON.stringify(appData));
+            console.log(`Загружено ${json.npas.length} записей НПА из GitHub`);
         }
+        
+        if (json.dashboards && Array.isArray(json.dashboards)) {
+            dashboardsData = [...json.dashboards];
+            localStorage.setItem(STORAGE_KEY_DASHBOARDS, JSON.stringify(dashboardsData));
+            console.log(`Загружено ${json.dashboards.length} дашбордов из GitHub`);
+        }
+        
+        renderGrid();
+        if (currentTab === 'dashboards') {
+            renderDashboardsGrid();
+        }
+        
+        showNotification(`✅ Данные загружены из GitHub\nФайл: ${loadedFileName}`, 'success');
+        updateFileNameIndicator(loadedFileName)
+        
+    } catch (error) {
+        console.warn('Не удалось загрузить из GitHub:', error.message);
+        showNotification('Используются локальные данные', 'warning');
+        
+        // Загружаем локальные данные ТОЛЬКО при ошибке GitHub
+        loadData();
+        loadDashboardsData();
     }
+}
 // Сохранение в GitHub
 
 async function saveToGitHub() {
