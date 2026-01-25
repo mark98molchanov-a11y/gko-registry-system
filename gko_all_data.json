@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "exportDate": "2026-01-25T14:18:07.095Z",
+  "exportDate": "2026-01-25T14:30:52.416Z",
   "npas": [
     {
       "id": 2,
@@ -980,10 +980,5 @@
       "notes": "",
       "createdDate": 1755561600000
     }
-  ],
-  "metadata": {
-    "npaCount": 51,
-    "dashboardsCount": 10,
-    "exportFormat": "combined"
-  }
+  ]
 }
