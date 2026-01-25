@@ -1262,48 +1262,72 @@ function showNotification(message, type = 'info') {
         }
 
         // ============== ОБЩИЕ ФУНКЦИИ ==============
-        function switchTab(tabName) {
-            // Обновляем активные кнопки вкладок
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Скрываем все вкладки, показываем активную
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.getElementById(`${tabName}Tab`).classList.add('active');
-            
-            // Обновляем кнопки импорта/добавления
-            if (tabName === 'npas') {
-                document.getElementById('npaImportButtons').classList.remove('hidden');
-                document.getElementById('dashboardsImportButtons').classList.add('hidden');
-                document.getElementById('addButtonText').textContent = 'Добавить запись';
-                document.getElementById('resetBtnText').textContent = 'Сброс НПА';
-                currentTab = 'npas';
-                // Скрываем тулбар дашбордов, показываем тулбар НПА
-                document.getElementById('bulkToolbarDashboards').classList.add('hidden');
-                if (selectedIds.size > 0) {
-                    document.getElementById('bulkToolbar').classList.remove('hidden');
-                }
-            } else {
-                document.getElementById('npaImportButtons').classList.add('hidden');
-                document.getElementById('dashboardsImportButtons').classList.remove('hidden');
-                document.getElementById('addButtonText').textContent = 'Новый дашборд';
-                document.getElementById('resetBtnText').textContent = 'Сброс дашбордов';
-                currentTab = 'dashboards';
-                // Скрываем тулбар НПА, показываем тулбар дашбордов
-                document.getElementById('bulkToolbar').classList.add('hidden');
-                if (selectedIdsDashboards.size > 0) {
-                    document.getElementById('bulkToolbarDashboards').classList.remove('hidden');
-                }
-                // Обновляем дашборды если еще не загружены
-                if (dashboardsData.length === 0) {
-                    loadDashboardsData();
-                }
-            }
+function switchTab(tabName) {
+    // Обновляем активные кнопки вкладок
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Скрываем все вкладки, показываем активную
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.getElementById(`${tabName}Tab`).classList.add('active');
+    
+    // Обновляем кнопки импорта/добавления
+    if (tabName === 'npas') {
+        document.getElementById('npaImportButtons').classList.remove('hidden');
+        document.getElementById('dashboardsImportButtons').classList.add('hidden');
+        document.getElementById('addButtonText').textContent = 'Добавить запись';
+        document.getElementById('resetBtnText').textContent = 'Сброс НПА';
+        currentTab = 'npas';
+        // Скрываем тулбар дашбордов, показываем тулбар НПА
+        document.getElementById('bulkToolbarDashboards').classList.add('hidden');
+        if (selectedIds.size > 0) {
+            document.getElementById('bulkToolbar').classList.remove('hidden');
         }
+    } else {
+        document.getElementById('npaImportButtons').classList.add('hidden');
+        document.getElementById('dashboardsImportButtons').classList.remove('hidden');
+        document.getElementById('addButtonText').textContent = 'Новый дашборд';
+        document.getElementById('resetBtnText').textContent = 'Сброс дашбордов';
+        currentTab = 'dashboards';
+        // Скрываем тулбар НПА, показываем тулбар дашбордов
+        document.getElementById('bulkToolbar').classList.add('hidden');
+        if (selectedIdsDashboards.size > 0) {
+            document.getElementById('bulkToolbarDashboards').classList.remove('hidden');
+        }
+        
+        // ГАРАНТИРОВАННАЯ ИНИЦИАЛИЗАЦИЯ ВКЛАДКИ ДАШБОРДОВ
+        // 1. Сначала убедимся, что данные загружены
+        if (dashboardsData.length === 0) {
+            loadDashboardsData(); // Эта функция должна загрузить данные
+        }
+        
+        // 2. Ждем немного, чтобы данные успели загрузиться, затем рендерим
+        setTimeout(() => {
+            // Обновляем статистику
+            updateDashboardStatsDashboards();
+            
+            // Обновляем фильтры
+            renderStatusFiltersDashboards();
+            renderTypeFiltersDashboards();
+            renderTagsDashboards();
+            
+            // Обновляем график
+            updateChartDashboards(dashboardsData);
+            
+            // И главное - рендерим грид карточек
+            renderDashboardsGrid();
+            
+            // Обновляем тулбар массового выбора
+            updateBulkToolbarDashboards();
+            
+            console.log('Вкладка дашбордов инициализирована, данных:', dashboardsData.length);
+        }, 50);
+    }
+}
 
         function hardResetCurrent() {
             if (currentTab === 'npas') {
@@ -1312,7 +1336,19 @@ function showNotification(message, type = 'info') {
                 hardResetDashboards();
             }
         }
-
+        function initializeDashboardsTab() {
+            if (dashboardsData.length === 0) {
+                loadDashboardsData();
+            } else {
+                // Обновляем все элементы вкладки
+                updateDashboardStatsDashboards();
+                renderStatusFiltersDashboards();
+                renderTypeFiltersDashboards();
+                renderTagsDashboards();
+                updateChartDashboards(dashboardsData);
+                renderDashboardsGrid();
+            }
+        }
         // ============== ФУНКЦИИ ДЛЯ НПА ==============
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY_NPA);
@@ -1668,9 +1704,14 @@ function loadDashboardsData() {
     renderTypeFiltersDashboards();
     renderTagsDashboards();
     
-    // Обновляем грид только если вкладка активна
+    // ВАЖНО: Всегда рендерим грид, если мы на вкладке дашбордов
+    // Не только проверяем currentTab, но и принудительно рендерим если нужно
     if (currentTab === 'dashboards') {
         renderDashboardsGrid();
+    } else {
+        // Если не на вкладке дашбордов, все равно создаем чарт
+        // но с пустыми данными для фильтров
+        updateChartDashboards(dashboardsData);
     }
 }
 
@@ -2702,14 +2743,18 @@ ${importedDashboards.slice(0, 3).map(d =>
 }
 
         // ============== ИНИЦИАЛИЗАЦИЯ ==============
-window.addEventListener('DOMContentLoaded', function() {
-    // Сначала пытаемся загрузить из GitHub
-    loadFromGitHub().then(() => {
-        console.log('✅ Загрузка из GitHub завершена');
-    }).catch((error) => {
-        console.log('⚠️ GitHub недоступен:', error.message);
-    });
-});
+        window.addEventListener('DOMContentLoaded', function() {
+            // Загружаем локальные данные для обеих вкладок
+            loadData();
+            loadDashboardsData(); // Предварительная загрузка данных дашбордов
+            
+            // Затем пытаемся синхронизировать с GitHub
+            loadFromGitHub().then(() => {
+                console.log('✅ Все данные загружены');
+            }).catch((error) => {
+                console.log('⚠️ GitHub недоступен:', error.message);
+            });
+        });
     </script>
 </body>
 </html>
