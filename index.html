@@ -3120,42 +3120,82 @@ function exportJson() {
         window.open(url, '_blank');
     }
 
-    function exportToExcelDashboards() {
-        const data = dashboardsData.map(d => ({
-            'Название': d.title,
-            'Ссылка': d.url,
-            'Описание': d.description,
-            'Тип анализа': getTypeTextDashboards(d.analysisType),
-            'Статус': getStatusTextDashboards(d.status),
-            'Владелец': d.owner,
-            'Теги': d.tags ? d.tags.join(', ') : '',
-            'Источник данных': d.dataSource,
-            'Периодичность обновления': getFrequencyTextDashboards(d.updateFrequency),
-            'Дата создания': d.createdDate ? new Date(d.createdDate).toLocaleDateString('ru-RU') : '',
-            'Комментарии': d.notes || ''
-        }));
+function exportToExcelDashboards() {
+    // Используем текущие фильтры для выгрузки
+    const search = document.getElementById('searchInputDashboards').value.toLowerCase();
+    const sortMode = document.getElementById('sortSelectDashboards').value;
+    
+    // Фильтруем данные как в интерфейсе
+    let filtered = dashboardsData.filter(item => {
+        const matchesStatus = !currentStatusFilterDashboards || item.status === currentStatusFilterDashboards;
+        const matchesType = !currentTypeFilterDashboards || item.analysisType === currentTypeFilterDashboards;
+        const matchesTag = !currentTagFilterDashboards || (item.tags && item.tags.some(tag => tag.toLowerCase() === currentTagFilterDashboards.toLowerCase()));
+        const matchesSearch = 
+            (item.title && item.title.toLowerCase().includes(search)) || 
+            (item.description && item.description.toLowerCase().includes(search)) ||
+            (item.owner && item.owner.toLowerCase().includes(search)) ||
+            (item.tags && item.tags.some(tag => tag.toLowerCase().includes(search)));
         
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Дашборды");
-        
-        const maxWidth = data.reduce((w, r) => Math.max(w, r['Название']?.length || 0), 10);
-        ws['!cols'] = [
-            { wch: maxWidth },     // Название
-            { wch: 40 },           // Ссылка
-            { wch: 50 },           // Описание
-            { wch: 15 },           // Тип анализа
-            { wch: 12 },           // Статус
-            { wch: 20 },           // Владелец
-            { wch: 30 },           // Теги
-            { wch: 20 },           // Источник данных
-            { wch: 20 },           // Периодичность обновления
-            { wch: 15 },           // Дата создания
-            { wch: 30 }            // Комментарии
-        ];
-        
-        XLSX.writeFile(wb, `Дашборды_GKO_${new Date().toISOString().split('T')[0]}.xlsx`);
-    }
+        return matchesStatus && matchesType && matchesTag && matchesSearch;
+    });
+
+    // Применяем сортировку как в интерфейсе
+    filtered.sort((a, b) => {
+        switch(sortMode) {
+            case 'nameAsc': return a.title.localeCompare(b.title);
+            case 'nameDesc': return b.title.localeCompare(a.title);
+            case 'createdDesc': return (b.createdDate || 0) - (a.createdDate || 0);
+            case 'createdAsc': return (a.createdDate || 0) - (b.createdDate || 0);
+            default: return (b.createdDate || 0) - (a.createdDate || 0);
+        }
+    });
+
+    // Подготавливаем данные для Excel
+    const data = filtered.map(d => ({
+        'Название': d.title,
+        'Ссылка': d.url,
+        'Описание': d.description,
+        'Тип анализа': getTypeTextDashboards(d.analysisType),
+        'Статус': getStatusTextDashboards(d.status),
+        'Владелец': d.owner,
+        'Теги': d.tags ? d.tags.join(', ') : '',
+        'Источник данных': d.dataSource,
+        'Периодичность обновления': getFrequencyTextDashboards(d.updateFrequency),
+        'Дата создания': d.createdDate ? new Date(d.createdDate).toLocaleDateString('ru-RU') : '',
+        'Комментарии': d.notes || ''
+    }));
+    
+    // Создаем лист Excel
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Дашборды");
+    
+    // Настраиваем ширину колонок
+    const maxWidth = data.reduce((w, r) => Math.max(w, r['Название']?.length || 0), 10);
+    ws['!cols'] = [
+        { wch: maxWidth },     // Название
+        { wch: 40 },           // Ссылка
+        { wch: 50 },           // Описание
+        { wch: 15 },           // Тип анализа
+        { wch: 12 },           // Статус
+        { wch: 20 },           // Владелец
+        { wch: 30 },           // Теги
+        { wch: 20 },           // Источник данных
+        { wch: 20 },           // Периодичность обновления
+        { wch: 15 },           // Дата создания
+        { wch: 30 }            // Комментарии
+    ];
+    
+    // Генерируем имя файла с датой
+    const fileName = `Дашборды_GKO_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    // Скачиваем файл
+    XLSX.writeFile(wb, fileName);
+    
+    // Показываем уведомление С КОЛИЧЕСТВОМ ЗАПИСЕЙ
+    showNotification(`Экспортировано ${filtered.length} дашбордов в Excel`, 'success');
+}
+
     
     function parseExcelDate(value, rowIndex) {
         if (!value) return Date.now();
