@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "exportDate": "2026-01-26T11:19:14.275Z",
+  "exportDate": "2026-01-26T11:34:54.405Z",
   "npas": [
     {
       "id": 2,
@@ -1053,6 +1053,39 @@
     "meta": {
       "moneyUnit": "rub",
       "period": "2025_year"
+    },
+    "2025_year": {
+      "ks_otch": 345,
+      "ks_cel": 45,
+      "k_on_obsh": 454,
+      "k_21": 0,
+      "k_22": 0,
+      "k_22_1": 0,
+      "k_sud": 0,
+      "ks_on_obsh": 454,
+      "ks_21": 0,
+      "ks_22": 0,
+      "ks_22_1": 0,
+      "ks_sud": 0,
+      "k_bezrp": 0,
+      "k_mkd": 0,
+      "k_vyyavl": 0,
+      "k_on_obsh_reestr": 0,
+      "k_nkor": 0,
+      "s_vyyavl": 0,
+      "s_ter": 0,
+      "s_vuf": 0,
+      "s_gosmun": 0,
+      "k_ps": 0,
+      "k_pdpr": 0,
+      "k_reg": 0,
+      "k_obsh_reg": 0,
+      "k_vknm_gzn": 0,
+      "k_vknm_mzk": 0,
+      "k_pknm_gzn": 0,
+      "k_pknm_mzk": 0,
+      "k_uknm_gzn": 0,
+      "k_uknm_mzk": 0
     }
   }
 }
