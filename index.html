@@ -1413,37 +1413,59 @@ function switchTab(tabName, event = null) {
             updateBulkToolbarDashboards();
         }, 50);
         
-    } else if (tabName === 'calculator') {
-        document.getElementById('npaImportButtons').classList.add('hidden');
-        document.getElementById('dashboardsImportButtons').classList.add('hidden');
-        document.getElementById('addButtonText').textContent = 'Новая запись';
-        document.getElementById('resetBtnText').textContent = 'Сброс калькулятора';
-        currentTab = 'calculator';
-        
-        // Скрываем все тулбары
-        document.getElementById('bulkToolbar').classList.add('hidden');
-        document.getElementById('bulkToolbarDashboards').classList.add('hidden');
-        
-        // УБИРАЕМ ensureReactLoaded() и просто инициализируем калькулятор
-        // Загружаем данные калькулятора если нужно
-        if (!window.calculatorInitialized) {
-            loadCalculatorData();
-            initializeCalculator();
-            window.calculatorInitialized = true;
-        } else {
-            // Если уже инициализирован, убедимся что данные загружены и перерендерим
-            loadCalculatorData();
-            // Форсируем перерисовку калькулятора
-            const calculatorRoot = document.getElementById('calculatorRoot');
-            if (calculatorRoot && calculatorRoot.innerHTML.trim() === '') {
+} else if (tabName === 'calculator') {
+    document.getElementById('npaImportButtons').classList.add('hidden');
+    document.getElementById('dashboardsImportButtons').classList.add('hidden');
+    document.getElementById('addButtonText').textContent = 'Новая запись';
+    document.getElementById('resetBtnText').textContent = 'Сброс калькулятора';
+    currentTab = 'calculator';
+    
+    // Скрываем все тулбары
+    document.getElementById('bulkToolbar').classList.add('hidden');
+    document.getElementById('bulkToolbarDashboards').classList.add('hidden');
+    
+    // ЗАГРУЖАЕМ ДАННЫЕ КАЛЬКУЛЯТОРА
+    loadCalculatorData();
+    
+    // ИНИЦИАЛИЗИРУЕМ КАЛЬКУЛЯТОР С ЗАДЕРЖКОЙ, ЧТОБЫ УБЕДИТЬСЯ ЧТО DOM ГОТОВ
+    setTimeout(() => {
+        const calculatorRoot = document.getElementById('calculatorRoot');
+        if (calculatorRoot) {
+            // Очищаем контейнер и инициализируем калькулятор
+            calculatorRoot.innerHTML = '';
+            
+            // Проверяем, загружены ли React и ReactDOM
+            if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
                 initializeCalculator();
+                window.calculatorInitialized = true;
             } else {
-                // Если калькулятор уже отрендерен, просто обновляем данные
-                // Можно добавить принудительный ререндер при необходимости
-                window.calculatorData = calculatorData;
+                // Если React еще не загружен, ждем и пробуем снова
+                const checkReact = setInterval(() => {
+                    if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+                        clearInterval(checkReact);
+                        initializeCalculator();
+                        window.calculatorInitialized = true;
+                    }
+                }, 100);
+                
+                // Таймаут на случай если React так и не загрузится
+                setTimeout(() => {
+                    clearInterval(checkReact);
+                    if (!window.calculatorInitialized) {
+                        calculatorRoot.innerHTML = `
+                            <div class="text-center py-12">
+                                <div class="text-red-500 mb-4">⚠️ Ошибка загрузки калькулятора</div>
+                                <p class="text-slate-600 mb-4">Не удалось загрузить компоненты React</p>
+                                <button onclick="location.reload()" class="px-4 py-2 bg-blue-500 text-white rounded-lg">
+                                    Перезагрузить страницу
+                                </button>
+                            </div>
+                        `;
+                    }
+                }, 5000);
             }
         }
-    }
+    }, 100);
 }
     function hardResetCurrent() {
         if (currentTab === 'npas') {
@@ -2717,8 +2739,6 @@ ${importedDashboards.slice(0, 3).map(d =>
     function initializeCalculator() {
         const calculatorCode = `
         const { useState, useEffect, useRef, useMemo } = React;
-
-        // --- ИКОНКИ ---
         const IconCalculator = ({size=16, className=""}) => React.createElement('svg', {
             xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: className
         }, [
@@ -3558,7 +3578,15 @@ ${importedDashboards.slice(0, 3).map(d =>
         script.text = calculatorCode;
         document.body.appendChild(script);
     }
-
+function forceCalculatorRender() {
+    const calculatorRoot = document.getElementById('calculatorRoot');
+    if (calculatorRoot) {
+        calculatorRoot.innerHTML = '';
+        if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+            initializeCalculator();
+        }
+    }
+}
     // ============== ИНИЦИАЛИЗАЦИЯ ==============
 window.addEventListener('DOMContentLoaded', function() {
     // Загружаем локальные данные для всех вкладок
@@ -3570,11 +3598,9 @@ window.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         if (document.getElementById('calculatorTab').classList.contains('active')) {
             console.log('Калькулятор активен при загрузке, инициализируем...');
-            if (!window.calculatorInitialized) {
-                initializeCalculator();
-            }
+            forceCalculatorRender();
         }
-    }, 100);
+    }, 200);
     
     // Затем пытаемся синхронизировать с GitHub
     loadFromGitHub().then(() => {
