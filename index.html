@@ -940,75 +940,92 @@
 
     // --- ГЛАВНЫЙ КОМПОНЕНТ КАЛЬКУЛЯТОРА ---
 
-    function EfficiencyCalculator() {
-        const [activeCalcTab, setActiveCalcTab] = useState(0);
-        const [moneyUnit, setMoneyUnit] = useState('rub'); 
-        const [period, setPeriod] = useState('2025_year');
 
-        const moneyLabels = {
-            'rub': 'руб.', 'thous': 'тыс. руб.', 'mln': 'млн руб.', 'bln': 'млрд руб.', 'trln': 'трлн руб.'
-        };
+function EfficiencyCalculator() {
+    const [activeCalcTab, setActiveCalcTab] = useState(0);
+    const [moneyUnit, setMoneyUnit] = useState('rub'); 
+    const [period, setPeriod] = useState('2025_year');
+    const [calculatorData, setCalculatorData] = useState({});
 
-        const periodsList = [
-            { id: '2025_year', label: '2025 год' },
-            { id: '2026_1_kv', label: '2026 - 1 квартал' },
-            { id: '2026_2_kv', label: '2026 - 2 квартал' },
-            { id: '2026_3_kv', label: '2026 - 3 квартал' },
-            { id: '2026_4_kv', label: '2026 - 4 квартал' },
-        ];
+    // ИНИЦИАЛИЗАЦИЯ - всегда загружаем из localStorage
+    useEffect(() => {
+        const savedData = JSON.parse(localStorage.getItem(STORAGE_KEY_CALCULATOR) || '{}');
+        console.log('Загружены данные калькулятора из localStorage:', savedData);
+        setCalculatorData(savedData);
+    }, []); // Пустой массив зависимостей = только при монтировании
 
-        const initialDataModel = {
-            ks_otch: 0, ks_cel: 0, k_on_obsh: 0, k_21: 0, k_22: 0, k_22_1: 0, k_sud: 0, ks_on_obsh: 0, ks_21: 0, ks_22: 0, ks_22_1: 0, ks_sud: 0,
-            k_bezrp: 0, k_mkd: 0, k_vyyavl: 0, k_on_obsh_reestr: 0, k_nkor: 0,
-            s_vyyavl: 0, s_ter: 0, s_vuf: 0, s_gosmun: 0,
-            k_ps: 0, k_pdpr: 0, k_reg: 0, k_obsh_reg: 0,
-            k_vknm_gzn: 0, k_vknm_mzk: 0, k_pknm_gzn: 0, k_pknm_mzk: 0, k_uknm_gzn: 0, k_uknm_mzk: 0,
-        };
+    const moneyLabels = {
+        'rub': 'руб.', 'thous': 'тыс. руб.', 'mln': 'млн руб.', 'bln': 'млрд руб.', 'trln': 'трлн руб.'
+    };
 
-        // БАЗА ДАННЫХ КАЛЬКУЛЯТОРА
-        const [calcDb, setCalcDb] = useState(() => {
-            const initialDb = {};
-            periodsList.forEach(p => initialDb[p.id] = { ...initialDataModel });
-            return initialDb;
-        });
+    const periodsList = [
+        { id: '2025_year', label: '2025 год' },
+        { id: '2026_1_kv', label: '2026 - 1 квартал' },
+        { id: '2026_2_kv', label: '2026 - 2 квартал' },
+        { id: '2026_3_kv', label: '2026 - 3 квартал' },
+        { id: '2026_4_kv', label: '2026 - 4 квартал' },
+    ];
 
-        // Безопасное получение данных
-        const currentData = calcDb[period] || initialDataModel;
+    const initialDataModel = {
+        ks_otch: 0, ks_cel: 0, k_on_obsh: 0, k_21: 0, k_22: 0, k_22_1: 0, k_sud: 0, 
+        ks_on_obsh: 0, ks_21: 0, ks_22: 0, ks_22_1: 0, ks_sud: 0,
+        k_bezrp: 0, k_mkd: 0, k_vyyavl: 0, k_on_obsh_reestr: 0, k_nkor: 0,
+        s_vyyavl: 0, s_ter: 0, s_vuf: 0, s_gosmun: 0,
+        k_ps: 0, k_pdpr: 0, k_reg: 0, k_obsh_reg: 0,
+        k_vknm_gzn: 0, k_vknm_mzk: 0, k_pknm_gzn: 0, k_pknm_mzk: 0, k_uknm_gzn: 0, k_uknm_mzk: 0,
+    };
 
-        // Обновление
-        const updateCalcData = (field, value) => {
-            setCalcDb(prev => ({
-                ...prev,
-                [period]: {
-                    ...prev[period],
-                    [field]: value
-                }
-            }));
-        };
+    // Получаем данные для текущего периода
+    const currentData = calculatorData[period] || { ...initialDataModel };
 
-        // Полный сброс текущего периода
-        const resetCurrentCalcPeriod = () => {
-            setCalcDb(prev => ({
-                ...prev,
-                [period]: { ...initialDataModel }
-            }));
-        };
-
-        const copyFromPreviousPeriod = () => {
-            const currentIndex = periodsList.findIndex(p => p.id === period);
-            if (currentIndex > 0) {
-                const prevPeriodId = periodsList[currentIndex - 1].id;
-                const prevData = calcDb[prevPeriodId];
-                if (confirm(`Вставить все данные из "${periodsList[currentIndex - 1].label}" в текущий период? Это перезапишет текущие значения.`)) {
-                    setCalcDb(prev => ({
-                        ...prev,
-                        [period]: { ...prevData }
-                    }));
-                }
-            } else {
-                alert("Это первый период, нет данных для вставки.");
+    // Обновление данных
+    const updateCalcData = (field, value) => {
+        const updatedData = {
+            ...calculatorData,
+            [period]: {
+                ...(calculatorData[period] || {}),
+                ...currentData,
+                [field]: value
             }
         };
+        
+        // Обновляем state
+        setCalculatorData(updatedData);
+        
+        // Сохраняем в localStorage
+        localStorage.setItem(STORAGE_KEY_CALCULATOR, JSON.stringify(updatedData));
+    };
+
+    // Полный сброс текущего периода
+    const resetCurrentCalcPeriod = () => {
+        const updatedData = {
+            ...calculatorData,
+            [period]: { ...initialDataModel }
+        };
+        
+        setCalculatorData(updatedData);
+        localStorage.setItem(STORAGE_KEY_CALCULATOR, JSON.stringify(updatedData));
+    };
+
+    const copyFromPreviousPeriod = () => {
+        const currentIndex = periodsList.findIndex(p => p.id === period);
+        if (currentIndex > 0) {
+            const prevPeriodId = periodsList[currentIndex - 1].id;
+            const prevData = calculatorData[prevPeriodId];
+            
+            if (confirm(`Вставить все данные из "${periodsList[currentIndex - 1].label}" в текущий период? Это перезапишет текущие значения.`)) {
+                const updatedData = {
+                    ...calculatorData,
+                    [period]: prevData ? { ...prevData } : { ...initialDataModel }
+                };
+                
+                setCalculatorData(updatedData);
+                localStorage.setItem(STORAGE_KEY_CALCULATOR, JSON.stringify(updatedData));
+            }
+        } else {
+            alert("Это первый период, нет данных для вставки.");
+        }
+    };
 
         // Расчеты (С ЗАЩИТОЙ ОТ ПЕРЕВЫПОЛНЕНИЯ)
         const calculateResults = (data) => {
@@ -1473,14 +1490,13 @@
         );
     }
 
-    // Функция для инициализации калькулятора
-    function initCalculator() {
-        const calculatorRoot = document.getElementById('calculatorRoot');
-        if (calculatorRoot) {
-            const root = ReactDOM.createRoot(calculatorRoot);
-            root.render(<EfficiencyCalculator />);
-        }
+function initCalculator() {
+    const calculatorRoot = document.getElementById('calculatorRoot');
+    if (calculatorRoot) {
+        const root = ReactDOM.createRoot(calculatorRoot);
+        root.render(<EfficiencyCalculator />);
     }
+}
 </script>
 
 <script>
@@ -1498,66 +1514,60 @@
     const GITHUB_SYNC_API = window.GITHUB_RAW_URL;
 
     // Автоматическая загрузка из GitHub при открытии
-    async function loadFromGitHub() {
-        if (!GITHUB_SYNC_ENABLED) {
-            loadData();
-            loadDashboardsData();
-            return;
+async function loadFromGitHub() {
+    if (!GITHUB_SYNC_ENABLED) {
+        loadData();
+        loadDashboardsData();
+        return;
+    }
+    
+    try {
+        console.log('Загрузка данных из GitHub...');
+        
+        const response = await fetch(`${GITHUB_SYNC_API}gko_all_data.json`);
+        
+        if (!response.ok) {
+            throw new Error(`Файл не найден (${response.status})`);
         }
         
-        try {
-            console.log('Загрузка данных из GitHub...');
-            
-            // Пытаемся загрузить стандартный файл
-            const response = await fetch(`${GITHUB_SYNC_API}gko_all_data.json`);
-            
-            if (!response.ok) {
-                throw new Error(`Файл не найден (${response.status})`);
-            }
-            
-            const json = await response.json();
-            
-            // Полностью заменяем данные на те, что из GitHub
-            if (json.npas && Array.isArray(json.npas)) {
-                appData = [...json.npas];
-                localStorage.setItem(STORAGE_KEY_NPA, JSON.stringify(appData));
-                console.log(`Загружено ${json.npas.length} записей НПА`);
-                // Обновляем первую вкладку
-                renderGrid();
-            }
-            
-            if (json.dashboards && Array.isArray(json.dashboards)) {
-                dashboardsData = [...json.dashboards];
-                localStorage.setItem(STORAGE_KEY_DASHBOARDS, JSON.stringify(dashboardsData));
-                console.log(`Загружено ${json.dashboards.length} дашбордов`);
-                // Обновляем вторую вкладку, даже если она не активна
-                if (currentTab === 'dashboards') {
-                    renderDashboardsGrid();
-                } else {
-                    // Все равно загружаем данные, но не рендерим
-                    // Функции фильтров будут работать с актуальными данными
-                    updateDashboardStatsDashboards();
-                    renderStatusFiltersDashboards();
-                    renderTypeFiltersDashboards();
-                    renderTagsDashboards();
-                }
-            }
-            
-            // Загрузка данных калькулятора
-            if (json.calculator) {
-                localStorage.setItem(STORAGE_KEY_CALCULATOR, JSON.stringify(json.calculator));
-                console.log('Данные калькулятора загружены из GitHub');
-            }
-            
-            showNotification('✅ Данные загружены из GitHub', 'success');
-            
-        } catch (error) {
-            console.warn('Не удалось загрузить из GitHub:', error.message);
-            // Просто загружаем локальные данные (которые теперь пустые или из localStorage)
-            loadData();
-            loadDashboardsData();
+        const json = await response.json();
+        
+        // Загрузка НПА
+        if (json.npas && Array.isArray(json.npas)) {
+            appData = [...json.npas];
+            localStorage.setItem(STORAGE_KEY_NPA, JSON.stringify(appData));
+            console.log(`Загружено ${json.npas.length} записей НПА`);
+            renderGrid();
         }
+        
+        // Загрузка дашбордов
+        if (json.dashboards && Array.isArray(json.dashboards)) {
+            dashboardsData = [...json.dashboards];
+            localStorage.setItem(STORAGE_KEY_DASHBOARDS, JSON.stringify(dashboardsData));
+            console.log(`Загружено ${json.dashboards.length} дашбордов`);
+            if (currentTab === 'dashboards') {
+                renderDashboardsGrid();
+            }
+        }
+        
+        // ЗАГРУЗКА ДАННЫХ КАЛЬКУЛЯТОРА
+        if (json.calculator) {
+            console.log('Данные калькулятора найдены в GitHub:', json.calculator);
+            
+            // Сохраняем в localStorage
+            localStorage.setItem(STORAGE_KEY_CALCULATOR, JSON.stringify(json.calculator));
+            
+            console.log('Данные калькулятора загружены из GitHub');
+        }
+        
+        showNotification('✅ Все данные загружены из GitHub', 'success');
+        
+    } catch (error) {
+        console.warn('Не удалось загрузить из GitHub:', error.message);
+        loadData();
+        loadDashboardsData();
     }
+}
     
     // Сохранение в GitHub
     let currentGitHubToken = null;
@@ -1717,27 +1727,29 @@
     let currentTab = 'npas';
 
     // ============== ОБЪЕДИНЕННЫЕ JSON ФУНКЦИИ ==============
-    function exportJson() {
-        const allData = {
-            version: "1.0",
-            exportDate: new Date().toISOString(),
-            npas: appData,
-            dashboards: dashboardsData,
-            // Добавляем данные калькулятора
-            calculator: JSON.parse(localStorage.getItem(STORAGE_KEY_CALCULATOR) || '{}'),
-            metadata: {
-                npaCount: appData.length,
-                dashboardsCount: dashboardsData.length,
-                exportFormat: "combined"
-            }
-        };
-        
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData, null, 2));
-        const a = document.createElement('a');
-        a.href = dataStr;
-        a.download = `gko_all_data.json`; 
-        a.click();
-    }
+function exportJson() {
+    // Получаем актуальные данные калькулятора из localStorage
+    const calculatorData = JSON.parse(localStorage.getItem(STORAGE_KEY_CALCULATOR) || '{}');
+    
+    const allData = {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        npas: appData,
+        dashboards: dashboardsData,
+        calculator: calculatorData,
+        metadata: {
+            npaCount: appData.length,
+            dashboardsCount: dashboardsData.length,
+            exportFormat: "combined"
+        }
+    };
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData, null, 2));
+    const a = document.createElement('a');
+    a.href = dataStr;
+    a.download = `gko_all_data_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+}
 
     function importJson() {
         const input = document.createElement('input');
@@ -1882,20 +1894,21 @@
                 
                 console.log('Вкладка дашбордов инициализирована, данных:', dashboardsData.length);
             }, 50);
-        } else if (tabName === 'calculator') {
-            document.getElementById('npaImportButtons').classList.add('hidden');
-            document.getElementById('dashboardsImportButtons').classList.add('hidden');
-            document.getElementById('addButtonText').textContent = 'Новый расчет';
-            document.getElementById('resetBtnText').textContent = 'Сброс калькулятора';
-            currentTab = 'calculator';
-            // Скрываем все тулбары
-            document.getElementById('bulkToolbar').classList.add('hidden');
-            document.getElementById('bulkToolbarDashboards').classList.add('hidden');
-            
-            // Инициализируем калькулятор
-            initCalculator();
-        }
+    } else if (tabName === 'calculator') {
+        document.getElementById('npaImportButtons').classList.add('hidden');
+        document.getElementById('dashboardsImportButtons').classList.add('hidden');
+        document.getElementById('addButtonText').textContent = 'Новый расчет';
+        document.getElementById('resetBtnText').textContent = 'Сброс калькулятора';
+        currentTab = 'calculator';
+        
+        // Скрываем все тулбары
+        document.getElementById('bulkToolbar').classList.add('hidden');
+        document.getElementById('bulkToolbarDashboards').classList.add('hidden');
+        
+        // Инициализируем калькулятор
+        initCalculator();
     }
+}
     
     function hardResetCurrent() {
         if (currentTab === 'npas') {
@@ -3184,23 +3197,27 @@
     }
 
     // ============== ИНИЦИАЛИЗАЦИЯ ==============
-    window.addEventListener('DOMContentLoaded', function() {
-        // Загружаем локальные данные для обеих вкладок
-        loadData();
-        loadDashboardsData(); // Предварительная загрузка данных дашбордов
+window.addEventListener('DOMContentLoaded', function() {
+    console.log('Инициализация приложения...');
+    
+    // 1. Загружаем локальные данные для НПА и дашбордов
+    loadData();
+    loadDashboardsData();
+    
+    // 2. Пытаемся загрузить из GitHub (включая данные калькулятора)
+    loadFromGitHub().then(() => {
+        console.log('✅ Все данные загружены');
         
-        // Затем пытаемся синхронизировать с GitHub
-        loadFromGitHub().then(() => {
-            console.log('✅ Все данные загружены');
-        }).catch((error) => {
-            console.log('⚠️ GitHub недоступен:', error.message);
-        });
-        
-        // Инициализируем калькулятор если мы на вкладке калькулятора
+        // 3. Если мы уже на вкладке калькулятора - инициализируем его
+        // (данные уже будут в localStorage от loadFromGitHub)
         if (window.location.hash === '#calculator') {
             setTimeout(() => {
                 switchTab('calculator');
             }, 100);
         }
+    }).catch((error) => {
+        console.log('⚠️ GitHub недоступен:', error.message);
+        // Даже если GitHub недоступен, калькулятор загрузит данные из localStorage
     });
+});
 </script>
