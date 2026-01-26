@@ -1090,18 +1090,6 @@ function EfficiencyCalculator() {
         console.log('Сохранено в localStorage');
     };
 
-
-    // Полный сброс текущего периода
-    const resetCurrentCalcPeriod = () => {
-        const updatedData = {
-            ...calculatorData,
-            [period]: { ...initialDataModel }
-        };
-        
-        setCalculatorData(updatedData);
-        localStorage.setItem(STORAGE_KEY_CALCULATOR, JSON.stringify(updatedData));
-    };
-
     const copyFromPreviousPeriod = () => {
         const currentIndex = periodsList.findIndex(p => p.id === period);
         if (currentIndex > 0) {
@@ -1842,7 +1830,7 @@ function exportJson() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allData, null, 2));
     const a = document.createElement('a');
     a.href = dataStr;
-    a.download = `gko_all_data.json';
+    a.download = `gko_all_data.json`;
     a.click();
 }
 
