@@ -980,5 +980,84 @@
       "notes": "",
       "createdDate": 1755561600000
     }
-  ]
+  ],
+ "calculator": {
+    "db": {
+      "2025_year": {
+        "ks_otch": 125000000000,
+        "ks_cel": 150000000000,
+        "k_on_obsh": 24500,
+        "k_21": 120,
+        "k_22": 85,
+        "k_22_1": 40,
+        "k_sud": 35,
+        "ks_on_obsh": 85000000000,
+        "ks_21": 4500000000,
+        "ks_22": 3200000000,
+        "ks_22_1": 1800000000,
+        "ks_sud": 1200000000,
+        "k_bezrp": 450,
+        "k_mkd": 120,
+        "k_vyyavl": 80,
+        "k_on_obsh_reestr": 28000,
+        "k_nkor": 350,
+        "s_vyyavl": 12500,
+        "s_ter": 450000,
+        "s_vuf": 3200,
+        "s_gosmun": 185000,
+        "k_ps": 18,
+        "k_pdpr": 22,
+        "k_reg": 14,
+        "k_obsh_reg": 20,
+        "k_vknm_gzn": 45,
+        "k_vknm_mzk": 28,
+        "k_pknm_gzn": 120,
+        "k_pknm_mzk": 65,
+        "k_uknm_gzn": 38,
+        "k_uknm_mzk": 22
+      },
+      "2026_1_kv": {
+        "ks_otch": 32000000000,
+        "ks_cel": 40000000000,
+        "k_on_obsh": 6200,
+        "k_21": 35,
+        "k_22": 22,
+        "k_22_1": 12,
+        "k_sud": 9,
+        "ks_on_obsh": 21500000000,
+        "ks_21": 1200000000,
+        "ks_22": 850000000,
+        "ks_22_1": 450000000,
+        "ks_sud": 320000000,
+        "k_bezrp": 125,
+        "k_mkd": 35,
+        "k_vyyavl": 22,
+        "k_on_obsh_reestr": 7200,
+        "k_nkor": 95,
+        "s_vyyavl": 3200,
+        "s_ter": 125000,
+        "s_vuf": 850,
+        "s_gosmun": 48000,
+        "k_ps": 5,
+        "k_pdpr": 6,
+        "k_reg": 4,
+        "k_obsh_reg": 5,
+        "k_vknm_gzn": 12,
+        "k_vknm_mzk": 8,
+        "k_pknm_gzn": 35,
+        "k_pknm_mzk": 18,
+        "k_uknm_gzn": 10,
+        "k_uknm_mzk": 6
+      }
+    },
+    "meta": {
+      "moneyUnit": "rub",
+      "period": "2025_year"
+    }
+  },
+  "metadata": {
+    "npaCount": 52,
+    "dashboardsCount": 10,
+    "exportFormat": "combined"
+  }
 }
