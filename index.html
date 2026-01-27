@@ -329,6 +329,78 @@
                 max-height: 300px;
             }
         }
+              .book-sidebar.collapsed {
+            width: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: all 0.3s ease;
+        }
+        
+        .book-sidebar.expanded {
+            width: 280px;
+            opacity: 1;
+            transform: translateX(0);
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-toggle {
+            position: absolute;
+            right: -12px;
+            top: 20px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        
+        .sidebar-toggle:hover {
+            background: #f1f5f9;
+            transform: scale(1.1);
+        }
+        
+        .sidebar-toggle.collapsed {
+            right: -36px;
+        }
+        
+        .collapse-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .book-sidebar.collapsed .collapse-icon {
+            transform: rotate(180deg);
+        }
+        
+        .book-section.main {
+            position: relative;
+            padding-right: 2.5rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        @media (max-width: 768px) {
+            .book-sidebar.expanded {
+                width: 100%;
+            }
+            
+            .sidebar-toggle {
+                right: 20px;
+                top: 20px;
+            }
+            
+            .sidebar-toggle.collapsed {
+                right: 20px;
+            }
+        }
+
     </style>
 </head>
 <body class="text-slate-800 antialiased flex flex-col min-h-screen">
@@ -391,8 +463,15 @@
     <!-- Основной контент с книжной структурой -->
     <div class="book-layout">
         <!-- Боковая панель с содержанием -->
-        <aside class="book-sidebar">
-            <div class="book-section main" onclick="switchTab('npas')">
+           <aside class="book-sidebar expanded">
+            <!-- Кнопка сворачивания -->
+            <div class="sidebar-toggle" onclick="toggleSidebar()">
+                <svg class="collapse-icon w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </div>
+            
+            <div class="book-section main" onclick="toggleSidebar()">
                 <div class="section-icon">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -416,7 +495,6 @@
                 <span>Калькулятор Эффективности</span>
             </div>
         </aside>
-
         <!-- Основной контент -->
         <main class="book-content">
             <!-- Заголовок текущего раздела -->
@@ -1775,7 +1853,55 @@ function initCalculator() {
     const STORAGE_KEY_ALL = 'gko_all_data.json';
     const now = Date.now();
     const GITHUB_SYNC_ENABLED = true;
-    
+        let isSidebarCollapsed = false;
+
+    // ФУНКЦИЯ ДЛЯ ПЕРЕКЛЮЧЕНИЯ СОСТОЯНИЯ БОКОВОЙ ПАНЕЛИ
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.book-sidebar');
+        const toggleBtn = document.querySelector('.sidebar-toggle');
+        const toggleIcon = document.querySelector('.collapse-icon');
+        
+        isSidebarCollapsed = !isSidebarCollapsed;
+        
+        if (isSidebarCollapsed) {
+            sidebar.classList.remove('expanded');
+            sidebar.classList.add('collapsed');
+            toggleBtn.classList.add('collapsed');
+            toggleIcon.style.transform = 'rotate(180deg)';
+        } else {
+            sidebar.classList.remove('collapsed');
+            sidebar.classList.add('expanded');
+            toggleBtn.classList.remove('collapsed');
+            toggleIcon.style.transform = 'rotate(0deg)';
+        }
+        
+        // Сохраняем состояние в localStorage
+        localStorage.setItem('gko_sidebar_collapsed', isSidebarCollapsed);
+    }
+
+    // ИНИЦИАЛИЗАЦИЯ СОСТОЯНИЯ ПАНЕЛИ ПРИ ЗАГРУЗКЕ
+    function initSidebarState() {
+        const savedState = localStorage.getItem('gko_sidebar_collapsed');
+        if (savedState !== null) {
+            isSidebarCollapsed = savedState === 'true';
+        }
+        
+        const sidebar = document.querySelector('.book-sidebar');
+        const toggleBtn = document.querySelector('.sidebar-toggle');
+        const toggleIcon = document.querySelector('.collapse-icon');
+        
+        if (isSidebarCollapsed) {
+            sidebar.classList.remove('expanded');
+            sidebar.classList.add('collapsed');
+            toggleBtn.classList.add('collapsed');
+            toggleIcon.style.transform = 'rotate(180deg)';
+        } else {
+            sidebar.classList.remove('collapsed');
+            sidebar.classList.add('expanded');
+            toggleBtn.classList.remove('collapsed');
+            toggleIcon.style.transform = 'rotate(0deg)';
+        }
+    }
     // Используем глобальную переменную
     const GITHUB_SYNC_API = window.GITHUB_RAW_URL;
 
@@ -3585,16 +3711,18 @@ function exportToExcelDashboards() {
 window.addEventListener('DOMContentLoaded', function() {
     console.log('Инициализация приложения...');
     
-    // 1. Загружаем локальные данные для НПА и дашбордов
+    // 1. Инициализация состояния боковой панели
+    initSidebarState();
+    
+    // 2. Загружаем локальные данные для НПА и дашбордов
     loadData();
     loadDashboardsData();
     
-    // 2. Пытаемся загрузить из GitHub (включая данные калькулятора)
+    // 3. Пытаемся загрузить из GitHub (включая данные калькулятора)
     loadFromGitHub().then(() => {
         console.log('✅ Все данные загружены');
         
-        // 3. Если мы уже на вкладке калькулятора - инициализируем его
-        // (данные уже будут в localStorage от loadFromGitHub)
+        // 4. Если мы уже на вкладке калькулятора - инициализируем его
         if (window.location.hash === '#calculator') {
             setTimeout(() => {
                 switchTab('calculator');
@@ -3602,7 +3730,6 @@ window.addEventListener('DOMContentLoaded', function() {
         }
     }).catch((error) => {
         console.log('⚠️ GitHub недоступен:', error.message);
-        // Даже если GitHub недоступен, калькулятор загрузит данные из localStorage
     });
 });
 </script>
