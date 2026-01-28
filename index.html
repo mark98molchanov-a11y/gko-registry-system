@@ -441,7 +441,12 @@
                     <span>Калькулятор эффективности</span>
                 </div>
             </div>
+                <div class="book-section main" onclick="switchTab('dio')" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border-top: 1px solid #8b5cf6;">
+        <div class="section-icon">
+            <img src="https://avatars.mds.yandex.net/i?id=b76c00669840a26fac6c5622da34239f_l-16407139-images-thumbs&n=13" 
+                 style="width: 20px; height: 20px; object-fit: contain; border-radius: 4px;">
         </div>
+        <span>База ДИО</span>
     </div>
 </aside>
 
@@ -702,9 +707,15 @@
             <div class="tab-content calculator-tab" id="calculatorTab">
                 <div id="calculatorRoot"></div>
             </div>
+<div class="tab-content" id="dioTab">
+                <div class="flex-grow w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <!-- Пустой контент - можно будет наполнить позже -->
+                </div>
+            </div>
         </main>
     </div>
     <footer class="bg-white border-t border-slate-200 mt-auto py-4">
+        
         <div class="max-w-7xl mx-auto px-4 text-center">
             <p class="text-sm text-slate-400">&copy; 2026 Отдел ГКО</p>
         </div>
@@ -1961,20 +1972,33 @@ function exportJson() {
         input.click();
     }
 function switchTab(tabName) {
-    document.querySelectorAll('.book-subsection, .book-subsubsection').forEach(el => {
+    // Убрать активность со всех пунктов навигации
+    document.querySelectorAll('.book-section.main, .book-subsection, .book-subsubsection').forEach(el => {
         el.classList.remove('active');
     });
     
     const navIdMap = {
         'npas': 'navNPA',
         'dashboards': 'navDashboards', 
-        'calculator': 'navCalculator'
+        'calculator': 'navCalculator',
+        'dio': null
     };
     
     const navId = navIdMap[tabName];
-    const activeNavItem = document.getElementById(navId);
-    if (activeNavItem) {
-        activeNavItem.classList.add('active');
+    if (navId) {
+        const activeNavItem = document.getElementById(navId);
+        if (activeNavItem) {
+            activeNavItem.classList.add('active');
+        }
+    }
+    
+    // Для главной секции ДИО
+    if (tabName === 'dio') {
+        const dioSection = Array.from(document.querySelectorAll('.book-section.main'))
+            .find(el => el.textContent.includes('База ДИО'));
+        if (dioSection) {
+            dioSection.classList.add('active');
+        }
     }
     
     document.querySelectorAll('.tab-content').forEach(tab => {
@@ -1982,7 +2006,15 @@ function switchTab(tabName) {
     });
     document.getElementById(`${tabName}Tab`).classList.add('active');
     
-    if (tabName === 'npas') {
+    if (tabName === 'dio') {
+        document.getElementById('npaImportButtons').classList.add('hidden');
+        document.getElementById('dashboardsImportButtons').classList.add('hidden');
+        document.getElementById('addButtonText').textContent = 'Добавить в ДИО';
+        document.getElementById('resetBtnText').textContent = 'Сброс ДИО';
+        currentTab = 'dio';
+        document.getElementById('bulkToolbar').classList.add('hidden');
+        document.getElementById('bulkToolbarDashboards').classList.add('hidden');
+    } else if (tabName === 'npas') {
         document.getElementById('npaImportButtons').classList.remove('hidden');
         document.getElementById('dashboardsImportButtons').classList.add('hidden');
         document.getElementById('addButtonText').textContent = 'Добавить запись';
@@ -2032,19 +2064,23 @@ function switchTab(tabName) {
 }
 
     
-    function hardResetCurrent() {
-        if (currentTab === 'npas') {
-            hardResetNPA();
-        } else if (currentTab === 'dashboards') {
-            hardResetDashboards();
-        } else if (currentTab === 'calculator') {
-            if (confirm("Очистить все данные калькулятора?")) {
-                localStorage.removeItem(STORAGE_KEY_CALCULATOR);
-                initCalculator();
-                showNotification('Данные калькулятора очищены', 'success');
-            }
+function hardResetCurrent() {
+    if (currentTab === 'npas') {
+        hardResetNPA();
+    } else if (currentTab === 'dashboards') {
+        hardResetDashboards();
+    } else if (currentTab === 'calculator') {
+        if (confirm("Очистить все данные калькулятора?")) {
+            localStorage.removeItem(STORAGE_KEY_CALCULATOR);
+            initCalculator();
+            showNotification('Данные калькулятора очищены', 'success');
+        }
+    } else if (currentTab === 'dio') {
+        if (confirm("Очистить данные Базы ДИО?")) {
+            showNotification('Данные ДИО очищены', 'success');
         }
     }
+}
     
     function initializeDashboardsTab() {
         if (dashboardsData.length === 0) {
