@@ -7,18 +7,18 @@
         // Сообщаем скриптам, что мы работаем в режиме iframe
         window.IFRAME_MODE = true;
     </script>
-    <meta http-equiv="Content-Security-Policy" content="
+  <meta http-equiv="Content-Security-Policy" content="
     default-src 'self' data: blob:;
-    script-src 'self' 'unsafe-inline' [https://cdn.jsdelivr.net](https://cdn.jsdelivr.net);
+    script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://raw.githubusercontent.com https://api.github.com https://mark98molchanov-ally.github.io;
     style-src 'self' 'unsafe-inline';
     img-src 'self' data: blob:;
-    connect-src 'self' [https://raw.githubusercontent.com](https://raw.githubusercontent.com) [https://api.github.com](https://api.github.com) [https://mark98molchanov-ally.github.io](https://mark98molchanov-ally.github.io);
+    connect-src 'self' https://raw.githubusercontent.com https://api.github.com https://mark98molchanov-ally.github.io;
     font-src 'self';
 ">
-    <link rel="stylesheet" href="styles.css">
-    <script src="[https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js](https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js)"></script>
-    <script src="[https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js](https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js)"></script>
-    <script src="[https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js](https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js)"></script>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     
     <style>
         /* --- СТИЛИ ДЛЯ РЕЖИМА ИНТЕГРАЦИИ --- */
